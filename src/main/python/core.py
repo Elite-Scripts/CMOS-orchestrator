@@ -74,10 +74,11 @@ def check_root_files(path_to_mount: str, file_lists: List[Tuple[str, ...]]) -> b
 
 
 def check_block_devices() -> BlockDevice:
+    base_file_list = ("boot", "EFI", "live", "syslinux", "[BOOT]")
     file_lists = [
-        ("autorun.ico", "autorun.inf", "EFI", "readme.txt", "slax", "syslinux.cfg", "System Volume Information"),
-        ("EFI", "readme.txt", "slax", "System Volume Information"),
-        ("EFI", "readme.txt", "slax")
+        base_file_list,
+        base_file_list + ("autorun.ico", "autorun.inf", "syslinux.cfg", "System Volume Information"),
+        base_file_list + tuple("System Volume Information"),
     ]
 
     block_devices = get_block_devices()
