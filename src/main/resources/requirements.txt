@@ -1,0 +1,5 @@
+textual==0.83.0
+textual-dev==1.6.1
+rich-pixels==3.0.1
+psutil==6.0.0
+pytest==8.3.3
