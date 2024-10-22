@@ -3,3 +3,5 @@ textual-dev==1.6.1
 rich-pixels==3.0.1
 psutil==6.0.0
 pytest==8.3.3
+setuptools==75.2.0
+wheel==0.44.0

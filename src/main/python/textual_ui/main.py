@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from textual.app import App, ComposeResult
 from textual.containers import Container
@@ -12,8 +13,9 @@ from textual_ui.system_stats_widget import SystemStatsWidget
 class TextualApp(App):
     """A Textual app to help visualize the CMOS orchestration process."""
     TITLE = "CMOS"
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    CSS_PATH = os.path.join(script_dir, '../../resources/grid_layout1.tcss')
+    script_dir = Path(__file__).parent
+    css_path = script_dir / '..' / '..' / 'resources' / 'grid_layout1.tcss'
+    CSS_PATH = css_path.resolve()
     BINDINGS = [("d", "toggle_dark", "Toggle dark mode")]
 
     def compose(self) -> ComposeResult:
