@@ -9,7 +9,8 @@ setup(
     install_requires=[
         'textual==0.83.0',
         'rich-pixels==3.0.1',
-        'psutil==6.0.0'
+        # If psutil is preinstalled on the OS this can cause issues.
+        'psutil >=5.9, <6'
     ],
     entry_points={
         'console_scripts': [
