@@ -81,7 +81,7 @@ def check_block_devices() -> BlockDevice:
     file_lists = [
         base_file_list,
         base_file_list + ("autorun.ico", "autorun.inf", "syslinux.cfg", "System Volume Information"),
-        base_file_list + tuple("System Volume Information"),
+        base_file_list + ("System Volume Information",),
     ]
 
     block_devices = get_block_devices()
