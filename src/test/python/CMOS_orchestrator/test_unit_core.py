@@ -2,10 +2,10 @@ import uuid
 
 import pytest
 import subprocess
-import json
-import core
-from core import BlockDevice
-from unittest.mock import patch, Mock
+
+from CMOS_orchestrator import core
+from CMOS_orchestrator.core import BlockDevice
+from unittest.mock import patch
 
 
 @patch('subprocess.check_output')
