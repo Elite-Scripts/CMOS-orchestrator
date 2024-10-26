@@ -56,15 +56,15 @@ def create_directory_and_mount(device_mount_directory_path: str, possible_mount)
 
     # Mimic echo command
     logger.info("Creating the following directory and attempting to mount to it.")
-    logger.info(path_to_mount)
+    logger.info(fullpath_to_mount)
 
     # Mimic mkdir -p command
-    os.makedirs(path_to_mount, exist_ok=True)
+    os.makedirs(fullpath_to_mount, exist_ok=True)
 
     # Attempt to mount device
-    mount_command = "sudo mount {0} {1}".format(possible_mount, path_to_mount)
+    mount_command = "mount {0} {1}".format(possible_mount, fullpath_to_mount)
     os.system(mount_command)
-    return path_to_mount
+    return fullpath_to_mount
 
 
 def check_root_files(path_to_mount: str, file_lists: List[Tuple[str, ...]]) -> bool:
