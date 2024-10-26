@@ -96,8 +96,8 @@ def check_block_devices() -> BlockDevice:
     raise Exception('No block device matched the given file lists.')
 
 
-def gather_and_extract_iso_files(root_path: str):
-    iso_path = "/iso"
+def gather_and_extract_iso_files(root_path: str, root_mount_path_directory: str):
+    iso_path = root_mount_path_directory
 
     # Equivalent to mkdir -p
     os.makedirs(iso_path, exist_ok=True)
@@ -135,19 +135,18 @@ class MultipleFilesError(Exception):
     pass
 
 
-def verify_iso_file():
-    iso_path = "/iso"
-    iso_files = glob.glob(os.path.join(iso_path, "*.iso"))
+def verify_iso_file(root_mount_path_directory:str):
+    iso_files = glob.glob(os.path.join(root_mount_path_directory, "*.iso"))
 
     if not iso_files:
         raise FileNotFoundError("We expected at least one ISO file. Make sure to copy an ISO file onto your USB.")
     elif len(iso_files) > 1:
         msg = ["Too many ISO files given."]
-        msg.append(f"Files in {iso_path} directory:")
+        msg.append(f"Files in {root_mount_path_directory} directory:")
         msg += iso_files
         raise MultipleFilesError('\n'.join(msg))
     else:
-        logger.info(f"ISO file in {iso_path} directory: {iso_files[0]}")
+        logger.info(f"ISO file in {root_mount_path_directory} directory: {iso_files[0]}")
         return iso_files[0]
 
 
@@ -156,9 +155,10 @@ def main():
     if platform.system() == 'Windows':
         logger.info("You are currently running Windows. CMOS only supports X86-64 Linux based operating systems.")
         return
+    user_home_directory_path = os.path.expanduser("~")
     cmos_usb = check_block_devices()
-    gather_and_extract_iso_files(cmos_usb.mountpoint)
-    iso_file = verify_iso_file()
+    gather_and_extract_iso_files(cmos_usb.mountpoint, user_home_directory_path)
+    iso_file = verify_iso_file(user_home_directory_path)
     top_level_device = get_top_level_device(cmos_usb.name)
     cmd = ['woeusb', '--target-filesystem', 'NTFS', '--device', iso_file, top_level_device]
     subprocess.run(cmd, check=True)
