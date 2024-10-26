@@ -8,6 +8,7 @@ import uuid
 from collections import namedtuple
 import json
 import subprocess
+import time
 from typing import List, Tuple
 
 logger = logging.getLogger("cmos")
@@ -51,7 +52,7 @@ def get_block_devices() -> List[BlockDevice]:
 
 def create_directory_and_mount(device_mount_directory_path: str, possible_mount):
     uuid4 = str(uuid.uuid4())
-    path_to_mount = "/mount_{0}_{1}".format(possible_mount, uuid4)
+    path_to_mount = "mount_{0}_{1}".format(possible_mount, uuid4)
     fullpath_to_mount = os.path.join(device_mount_directory_path, path_to_mount)
 
     # Mimic echo command
@@ -154,16 +155,23 @@ def verify_iso_file(root_mount_path_directory:str):
 
 
 def main():
-    if platform.system() == 'Windows':
-        logger.info("You are currently running Windows. CMOS only supports X86-64 Linux based operating systems.")
-        return
-    user_home_directory_path = os.path.expanduser("~")
-    device_mount_directory_path = os.path.join(user_home_directory_path, "mnt")
-    iso_root_mount_path_directory = os.path.join(user_home_directory_path, "iso")
+    try:
+        if platform.system() == 'Windows':
+            logger.info("You are currently running Windows. CMOS only supports X86-64 Linux based operating systems.")
+            return
+        user_home_directory_path = os.path.expanduser("~")
+        device_mount_directory_path = os.path.join(user_home_directory_path, "mnt")
+        iso_root_mount_path_directory = os.path.join(user_home_directory_path, "iso")
 
-    cmos_usb = check_block_devices(device_mount_directory_path)
-    gather_and_extract_iso_files(cmos_usb.mountpoint, iso_root_mount_path_directory)
-    iso_file = verify_iso_file(iso_root_mount_path_directory)
-    top_level_device = get_top_level_device(cmos_usb.name)
-    cmd = ['woeusb', '--target-filesystem', 'NTFS', '--device', iso_file, top_level_device]
-    subprocess.run(cmd, check=True)
+        cmos_usb = check_block_devices(device_mount_directory_path)
+        gather_and_extract_iso_files(cmos_usb.mountpoint, iso_root_mount_path_directory)
+        iso_file = verify_iso_file(iso_root_mount_path_directory)
+        top_level_device = get_top_level_device(cmos_usb.name)
+        cmd = ['woeusb', '--target-filesystem', 'NTFS', '--device', iso_file, top_level_device]
+        subprocess.run(cmd, check=True)
+    except Exception as e:
+        logger.error(e)
+        logger.error("CMOS experienced a failure!")
+        logger.info("Sleeping for 30 seconds before terminating.")
+        time.sleep(30)
+        exit(1)
