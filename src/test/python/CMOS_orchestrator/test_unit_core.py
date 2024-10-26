@@ -82,6 +82,7 @@ def test_get_possible_mounts():
 
 
 def test_create_directory_and_mount():
+    device_mount_directory_path = "/"
     test_mount = "/test_mount"
     expected_uuid4 = "c7d392ff-503f-4bd5-8b5d-9b90606f4154"
     expected_path_to_mount = "/mount_/test_mount_c7d392ff-503f-4bd5-8b5d-9b90606f4154"
@@ -92,7 +93,7 @@ def test_create_directory_and_mount():
         # uuid is mocked here to return a predefined UUID and os functions are replaced with mock
 
         # Call the function
-        result = core.create_directory_and_mount(test_mount)
+        result = core.create_directory_and_mount(device_mount_directory_path, test_mount)
 
     # Assertions
     assert result == expected_path_to_mount  # It should return correct mount path

@@ -49,9 +49,10 @@ def get_block_devices() -> List[BlockDevice]:
     return block_devices
 
 
-def create_directory_and_mount(possible_mount):
+def create_directory_and_mount(device_mount_directory_path: str, possible_mount):
     uuid4 = str(uuid.uuid4())
     path_to_mount = "/mount_{0}_{1}".format(possible_mount, uuid4)
+    fullpath_to_mount = os.path.join(device_mount_directory_path, path_to_mount)
 
     # Mimic echo command
     logger.info("Creating the following directory and attempting to mount to it.")
@@ -76,7 +77,7 @@ def check_root_files(path_to_mount: str, file_lists: List[Tuple[str, ...]]) -> b
     return False
 
 
-def check_block_devices() -> BlockDevice:
+def check_block_devices(device_mount_directory_path:str) -> BlockDevice:
     base_file_list = ("boot", "EFI", "live", "syslinux")
     file_lists = [
         base_file_list,
@@ -86,7 +87,7 @@ def check_block_devices() -> BlockDevice:
 
     block_devices = get_block_devices()
     for block_device in block_devices:
-        path_to_mount = create_directory_and_mount(block_device.name)
+        path_to_mount = create_directory_and_mount(device_mount_directory_path, block_device.name)
         if check_root_files(path_to_mount, file_lists):
             logger.info(
                 f"The contents of the root directory of the device {block_device.name} match with one of the target file lists")
@@ -157,9 +158,10 @@ def main():
         logger.info("You are currently running Windows. CMOS only supports X86-64 Linux based operating systems.")
         return
     user_home_directory_path = os.path.expanduser("~")
+    device_mount_directory_path = os.path.join(user_home_directory_path, "mnt")
     iso_root_mount_path_directory = os.path.join(user_home_directory_path, "iso")
 
-    cmos_usb = check_block_devices()
+    cmos_usb = check_block_devices(device_mount_directory_path)
     gather_and_extract_iso_files(cmos_usb.mountpoint, iso_root_mount_path_directory)
     iso_file = verify_iso_file(iso_root_mount_path_directory)
     top_level_device = get_top_level_device(cmos_usb.name)
