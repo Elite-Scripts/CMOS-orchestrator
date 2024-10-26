@@ -100,6 +100,7 @@ def gather_and_extract_iso_files(root_path: str, root_mount_path_directory: str)
     iso_path = root_mount_path_directory
 
     # Equivalent to mkdir -p
+    logger.info("Using the following root mount path directory: " + root_mount_path_directory)
     os.makedirs(iso_path, exist_ok=True)
 
     # find and copy .iso files
@@ -156,9 +157,11 @@ def main():
         logger.info("You are currently running Windows. CMOS only supports X86-64 Linux based operating systems.")
         return
     user_home_directory_path = os.path.expanduser("~")
+    iso_root_mount_path_directory = os.path.join(user_home_directory_path, "iso")
+
     cmos_usb = check_block_devices()
-    gather_and_extract_iso_files(cmos_usb.mountpoint, user_home_directory_path)
-    iso_file = verify_iso_file(user_home_directory_path)
+    gather_and_extract_iso_files(cmos_usb.mountpoint, iso_root_mount_path_directory)
+    iso_file = verify_iso_file(iso_root_mount_path_directory)
     top_level_device = get_top_level_device(cmos_usb.name)
     cmd = ['woeusb', '--target-filesystem', 'NTFS', '--device', iso_file, top_level_device]
     subprocess.run(cmd, check=True)
