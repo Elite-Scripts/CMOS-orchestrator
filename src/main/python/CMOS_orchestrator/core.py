@@ -89,6 +89,8 @@ def check_block_devices(device_mount_directory_path:str) -> BlockDevice:
     block_devices = get_block_devices()
     for block_device in block_devices:
         path_to_mount = create_directory_and_mount(device_mount_directory_path, block_device.name)
+        contents = os.listdir(path_to_mount)
+        logger.info(f"Mounting {path_to_mount} with the following contents: {', '.join(contents)}")
         if check_root_files(path_to_mount, file_lists):
             logger.info(
                 f"The contents of the root directory of the device {block_device.name} match with one of the target file lists")

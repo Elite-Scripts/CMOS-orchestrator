@@ -100,4 +100,4 @@ def test_create_directory_and_mount():
     mock_makedirs.assert_called_once_with(expected_path_to_mount,
                                           exist_ok=True)  # It should try to create the directory
     mock_system.assert_called_once_with(
-        "sudo mount {0} {1}".format(test_mount, expected_path_to_mount))  # It should attempt to mount the device
+        "mount {0} {1}".format(test_mount, expected_path_to_mount))  # It should attempt to mount the device
