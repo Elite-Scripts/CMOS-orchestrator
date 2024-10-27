@@ -63,8 +63,13 @@ def create_directory_and_mount(device_mount_directory_path: str, possible_mount)
     os.makedirs(fullpath_to_mount, exist_ok=True)
 
     # Attempt to mount device
-    mount_command = "mount {0} {1}".format(possible_mount, fullpath_to_mount)
-    os.system(mount_command)
+    mount_command = ["mount", possible_mount, fullpath_to_mount]
+    try:
+        subprocess.run(mount_command, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+        logger.error("Error during the mount command:")
+        logger.error(e.output)
+
     return fullpath_to_mount
 
 

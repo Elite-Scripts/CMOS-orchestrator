@@ -88,7 +88,7 @@ def test_create_directory_and_mount():
     expected_path_to_mount = "/mount_/test_mount_c7d392ff-503f-4bd5-8b5d-9b90606f4154"
 
     with patch('os.makedirs', autospec=True) as mock_makedirs, \
-            patch('os.system', autospec=True) as mock_system, \
+            patch('subprocess.run', autospec=True) as mock_run, \
             patch('uuid.uuid4', return_value=uuid.UUID(expected_uuid4)):
         # uuid is mocked here to return a predefined UUID and os functions are replaced with mock
 
@@ -99,5 +99,6 @@ def test_create_directory_and_mount():
     assert result == expected_path_to_mount  # It should return correct mount path
     mock_makedirs.assert_called_once_with(expected_path_to_mount,
                                           exist_ok=True)  # It should try to create the directory
-    mock_system.assert_called_once_with(
-        "mount {0} {1}".format(test_mount, expected_path_to_mount))  # It should attempt to mount the device
+    mock_run.assert_called_once_with(
+        ["mount", test_mount, expected_path_to_mount],
+        check=True, capture_output=True, text=True)  # It should attempt to mount the device
