@@ -68,7 +68,7 @@ def create_directory_and_mount(device_mount_directory_path: str, possible_mount)
         subprocess.run(mount_command, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
         logger.error("Error during the mount command:")
-        logger.error(e.output)
+        logger.error(e.stderr)
 
     return fullpath_to_mount
 
