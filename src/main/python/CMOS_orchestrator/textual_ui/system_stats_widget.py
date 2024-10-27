@@ -21,7 +21,7 @@ class SystemStatsWidget(Widget):
             disk_info = psutil.disk_usage('/')
             self.total_memory = memory_info.total // 1024 ** 2
             self.available_memory = memory_info.available // 1024 ** 2
-            self.used_memory = memory_info.used // 1024 ** 2
+            self.used_memory = (memory_info.total - memory_info.available) // 1024 ** 2
             self.memory_percent = memory_info.percent
             self.cpu_percent = cpu_info
             self.disk_usage = f"{disk_info.used // (1024 ** 3)}GB used out of {disk_info.total // (1024 ** 3)}GB"
