@@ -50,6 +50,18 @@ def get_block_devices() -> List[BlockDevice]:
     return block_devices
 
 
+def unmount_directory(fullpath_to_mount: str):
+    logger.info("Attempting to unmount: %s", fullpath_to_mount)
+
+    unmount_command = ["umount", fullpath_to_mount]
+    try:
+        subprocess.run(unmount_command, check=True, capture_output=True, text=True)
+        logger.info("Successfully unmounted: %s", fullpath_to_mount)
+    except subprocess.CalledProcessError as e:
+        logger.error("Error during the unmount command:")
+        logger.error(e.stderr)
+
+
 def create_directory_and_mount(device_mount_directory_path: str, possible_mount):
     uuid4 = str(uuid.uuid4())
     path_to_mount = "mount_{0}_{1}".format(possible_mount, uuid4)
@@ -139,6 +151,7 @@ def gather_and_extract_iso_files(root_path: str, root_mount_path_directory: str)
             logger.info("No more part files found, finished concatenation.")
             break
         part_files_found = False
+    unmount_directory(root_path)
 
 
 class MultipleFilesError(Exception):
