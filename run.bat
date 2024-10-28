@@ -14,3 +14,5 @@ set PYTHONPATH=%PYTHONPATH%;%python_dir%
 
 REM Run python script
 python "%python_dir%\CMOS_orchestrator\main.py"
+
+pause
