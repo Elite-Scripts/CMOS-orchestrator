@@ -4,6 +4,7 @@ import os
 import platform
 import shutil
 import sys
+import threading
 import uuid
 from collections import namedtuple
 import json
@@ -176,16 +177,25 @@ def verify_iso_file(root_mount_path_directory:str):
         return iso_files[0]
 
 
+def handle_output(process, handler):
+    for line in iter(process.stdout.readline, b''):
+        handler(line.decode().strip())
+
+
 def run_woeusb(iso_file, top_level_device):
     cmd = ['woeusb', '--target-filesystem', 'NTFS', '--device', iso_file, top_level_device]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    stdout, stderr = process.communicate()
+    stdout_thread = threading.Thread(target=handle_output, args=(process.stdout, logging.info))
+    stderr_thread = threading.Thread(target=handle_output, args=(process.stderr, logging.error))
 
-    if stdout:
-        logging.info(stdout.decode().strip())
-    if stderr:
-        logging.error(stderr.decode().strip())
+    stdout_thread.start()
+    stderr_thread.start()
+
+    stdout_thread.join()
+    stderr_thread.join()
+
+    process.communicate()  # This will just make Popen wait until the process is finished
 
     if process.returncode != 0:
         logging.error(f'woeusb command exited with return code {process.returncode}')
