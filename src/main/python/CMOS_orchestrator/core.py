@@ -177,19 +177,16 @@ def run_woeusb(iso_file, top_level_device):
     cmd = ['woeusb', '--target-filesystem', 'NTFS', '--device', iso_file, top_level_device]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    # Reading output in real-time
-    for line in iter(process.stdout.readline, b''):
-        logging.info(line.decode().strip())
-    for line in iter(process.stderr.readline, b''):
-        logging.error(line.decode().strip())
+    stdout, stderr = process.communicate()
 
-    process.stdout.close()
-    process.stderr.close()
+    if stdout:
+        logging.info(stdout.decode().strip())
+    if stderr:
+        logging.error(stderr.decode().strip())
 
-    # Check for completion
-    return_code = process.wait()
-    if return_code != 0:
-        raise subprocess.CalledProcessError(return_code, cmd)
+    if process.returncode != 0:
+        logging.error(f'woeusb command exited with return code {process.returncode}')
+        raise subprocess.CalledProcessError(process.returncode, cmd)
 
 
 def main():
