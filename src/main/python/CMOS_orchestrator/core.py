@@ -87,7 +87,7 @@ def create_directory_and_mount(device_mount_directory_path: str, possible_mount)
 
 def check_root_files(path_to_mount: str, file_lists: List[Tuple[str, ...]]) -> bool:
     files_in_directory = [file for file in os.listdir(path_to_mount)
-                          if not ('.iso' in file or '.part' in file)]
+                          if not ('.iso' in file or '.part' in file or 'recycle' in file.lower())]
 
     for file_list in file_lists:
         if set(files_in_directory) == set(file_list):
