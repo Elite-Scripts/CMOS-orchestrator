@@ -183,7 +183,7 @@ def handle_output(process, handler):
 
 
 def run_woeusb(iso_file, top_level_device):
-    cmd = ['woeusb', '--target-filesystem', 'NTFS', '--device', iso_file, top_level_device]
+    cmd = ['woeusb', '--target-filesystem', 'NTFS', '--device', '--no-color', iso_file, top_level_device]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     stdout_thread = threading.Thread(target=handle_output, args=(process.stdout, logging.info))
