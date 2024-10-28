@@ -173,6 +173,24 @@ def verify_iso_file(root_mount_path_directory:str):
         return iso_files[0]
 
 
+def run_woeusb(iso_file, top_level_device):
+    cmd = ['woeusb', '--target-filesystem', 'NTFS', '--device', iso_file, top_level_device]
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # Reading output in real-time
+    for line in iter(process.stdout.readline, b''):
+        logging.info(line.decode().strip())
+    for line in iter(process.stderr.readline, b''):
+        logging.error(line.decode().strip())
+
+    process.stdout.close()
+    process.stderr.close()
+
+    # Check for completion
+    return_code = process.wait()
+    if return_code != 0:
+        raise subprocess.CalledProcessError(return_code, cmd)
+
 
 def main():
     try:
@@ -187,8 +205,7 @@ def main():
         gather_and_extract_iso_files(cmos_usb.mountpoint, iso_root_mount_path_directory)
         iso_file = verify_iso_file(iso_root_mount_path_directory)
         top_level_device = get_top_level_device(cmos_usb.name)
-        cmd = ['woeusb', '--target-filesystem', 'NTFS', '--device', iso_file, top_level_device]
-        subprocess.run(cmd, check=True)
+        run_woeusb(iso_file, top_level_device)
     except Exception as e:
         logger.error(e)
         logger.error("CMOS experienced a failure!")
