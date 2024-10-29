@@ -10,6 +10,7 @@ from collections import namedtuple
 import json
 import subprocess
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import List, Tuple
 
 logger = logging.getLogger("cmos")
@@ -177,29 +178,21 @@ def verify_iso_file(root_mount_path_directory:str):
         return iso_files[0]
 
 
-def handle_output(process, handler):
-    for line in iter(process.stdout.readline, b''):
-        handler(line.decode().strip())
+def handle_output(process, handler_info, handler_error):
+    for line in iter(process.readline, b''):
+        message = line.decode().strip()
+        handler_error(message) if "Error:" in message else handler_info(message)
 
 
 def run_woeusb(iso_file, top_level_device):
     cmd = ['woeusb', '--target-filesystem', 'NTFS', '--device', '--no-color', iso_file, top_level_device]
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            executor.submit(handle_output, process.stdout, logger.info, logger.error)
+            executor.submit(handle_output, process.stderr, logger.info, logger.error)
 
-    stdout_thread = threading.Thread(target=handle_output, args=(process.stdout, logging.info))
-    stderr_thread = threading.Thread(target=handle_output, args=(process.stderr, logging.error))
-
-    stdout_thread.start()
-    stderr_thread.start()
-
-    stdout_thread.join()
-    stderr_thread.join()
-
-    process.communicate()  # This will just make Popen wait until the process is finished
-
-    if process.returncode != 0:
-        logging.error(f'woeusb command exited with return code {process.returncode}')
-        raise subprocess.CalledProcessError(process.returncode, cmd)
+        if process.returncode != 0:
+            raise Exception(f'woeusb command exited with return code {process.returncode}')
 
 
 def main():
@@ -216,9 +209,10 @@ def main():
         iso_file = verify_iso_file(iso_root_mount_path_directory)
         top_level_device = get_top_level_device(cmos_usb.name)
         run_woeusb(iso_file, top_level_device)
+        logger.info("CMOS has completed successfully!")
     except Exception as e:
         logger.error(e)
         logger.error("CMOS experienced a failure!")
         logger.info("Sleeping for 30 seconds before terminating.")
         time.sleep(30)
-        exit(1)
+        exit(0)
