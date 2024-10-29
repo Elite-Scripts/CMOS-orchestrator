@@ -191,6 +191,7 @@ def run_woeusb(iso_file, top_level_device):
             executor.submit(handle_output, process.stdout, logger.info, logger.error)
             executor.submit(handle_output, process.stderr, logger.info, logger.error)
 
+        process.wait()
         if process.returncode != 0:
             raise Exception(f'woeusb command exited with return code {process.returncode}')
 
