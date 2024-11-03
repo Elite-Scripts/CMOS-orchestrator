@@ -2,6 +2,7 @@ import glob
 import logging
 import os
 import platform
+import re
 import shutil
 import sys
 import threading
@@ -180,7 +181,8 @@ def verify_iso_file(root_mount_path_directory:str):
 
 def handle_output(process, handler_info, handler_error):
     for line in iter(process.readline, b''):
-        message = line.decode().strip()
+        # remove ANSI escape sequences
+        message = re.sub(r'\x1b\[.*?[@-~]', '', line.decode()).strip()
         handler_error(message) if "Error:" in message else handler_info(message)
 
 

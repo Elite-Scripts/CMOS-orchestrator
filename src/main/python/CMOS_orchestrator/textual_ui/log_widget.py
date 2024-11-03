@@ -39,6 +39,11 @@ class SystemSynchronizedLogWidget(Log):
     def on_mount(self) -> None:
         logger = logging.getLogger("cmos")
         logger.setLevel(logging.INFO)
+
+        file_handler = logging.FileHandler('cmos_logfile.log')
+        file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
+        logger.addHandler(file_handler)
+
         console_width = rich.get_console().width
         handler = WidgetHandler(self, max_len=console_width)  # Use console width as max_len
         handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
