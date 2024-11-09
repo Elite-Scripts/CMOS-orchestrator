@@ -123,17 +123,22 @@ def check_block_devices(device_mount_directory_path:str) -> BlockDevice:
     raise Exception('No block device matched the given file lists.')
 
 
-def copy_with_progress(src_path, dst_path, progress_callback=lambda progress: None):
+def copy_with_progress(src_path, dst_path, progress_callback=lambda progress: None, chunk_size_kb=1000):
     file_size = os.path.getsize(src_path)
+    chunk_size = chunk_size_kb * 1024  # convert from Kilobytes to bytes
     with open(src_path, 'rb') as src_file, open(dst_path, 'ab') as dst_file:
-        for chunk in iter(lambda: src_file.read(1024), b''):
+        for chunk in iter(lambda: src_file.read(chunk_size), b''):
             dst_file.write(chunk)
             copy_progress = src_file.tell() / file_size
             progress_callback(copy_progress)
 
 
 def progress_reporter(progress):
-    logger.info(f"Copy progress: {progress * 100:.2f}%")
+    progress_percent = round(progress * 100)
+    if not hasattr(progress_reporter,
+                   "last_reported_percent") or progress_reporter.last_reported_percent != progress_percent:
+        progress_reporter.last_reported_percent = progress_percent
+        logger.info(f"Copy progress: {progress_percent}%")
 
 
 def gather_and_extract_iso_files(root_path: str, root_mount_path_directory: str):
@@ -165,7 +170,8 @@ def gather_and_extract_iso_files(root_path: str, root_mount_path_directory: str)
                 src_path = os.path.join(root_path, file)
                 copy_with_progress(src_path=src_path,
                                    dst_path=concatenated_iso_path,
-                                   progress_callback=progress_reporter)
+                                   progress_callback=progress_reporter,
+                                   chunk_size_kb=20000)
                 break
         if not part_files_found:
             logger.info("No more part files found, finished concatenation.")
