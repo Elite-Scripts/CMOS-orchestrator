@@ -1,8 +1,19 @@
+import json
 import logging
 from logging import Handler
 
 import rich
 from textual.widgets import Log
+
+
+class JsonLogFormatter(logging.Formatter):
+    def format(self, record):
+        return json.dumps({
+            'time': self.formatTime(record),
+            'name': record.name,
+            'levelname': record.levelname,
+            'message': record.msg
+        })
 
 
 def wrap_text(text: str, max_len: int) -> str:
@@ -43,6 +54,10 @@ class SystemSynchronizedLogWidget(Log):
         file_handler = logging.FileHandler('cmos_logfile.log')
         file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
         logger.addHandler(file_handler)
+
+        json_file_handler = logging.FileHandler('cmos_logfile.json')
+        json_file_handler.setFormatter(JsonLogFormatter())
+        logger.addHandler(json_file_handler)
 
         console_width = rich.get_console().width
         handler = WidgetHandler(self, max_len=console_width)  # Use console width as max_len

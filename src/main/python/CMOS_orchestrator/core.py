@@ -123,6 +123,19 @@ def check_block_devices(device_mount_directory_path:str) -> BlockDevice:
     raise Exception('No block device matched the given file lists.')
 
 
+def copy_with_progress(src_path, dst_path, progress_callback=lambda progress: None):
+    file_size = os.path.getsize(src_path)
+    with open(src_path, 'rb') as src_file, open(dst_path, 'ab') as dst_file:
+        for chunk in iter(lambda: src_file.read(1024), b''):
+            dst_file.write(chunk)
+            copy_progress = src_file.tell() / file_size
+            progress_callback(copy_progress)
+
+
+def progress_reporter(progress):
+    logger.info(f"Copy progress: {progress * 100:.2f}%")
+
+
 def gather_and_extract_iso_files(root_path: str, root_mount_path_directory: str):
     iso_path = root_mount_path_directory
 
@@ -149,9 +162,10 @@ def gather_and_extract_iso_files(root_path: str, root_mount_path_directory: str)
             if file.endswith(f'.part{i}') and not file.startswith("._"):
                 part_files_found = True
                 logger.info(f"Adding the following file to the ISO: {os.path.join(root_path, file)}")
-                with open(os.path.join(root_path, file), 'rb') as pf:
-                    with open(concatenated_iso_path, 'ab') as cif:
-                        shutil.copyfileobj(pf, cif)
+                src_path = os.path.join(root_path, file)
+                copy_with_progress(src_path=src_path,
+                                   dst_path=concatenated_iso_path,
+                                   progress_callback=progress_reporter)
                 break
         if not part_files_found:
             logger.info("No more part files found, finished concatenation.")
