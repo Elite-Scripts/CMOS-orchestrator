@@ -172,7 +172,7 @@ def gather_and_extract_iso_files(root_path: str, root_mount_path_directory: str)
 
     # Find and concatenate .part* files
     concatenated_iso_path = os.path.join(iso_path, 'concatenated_iso.iso')
-    part_files = [file for file in os.listdir(root_path) if file.endswith('.part') and not file.startswith("._")]
+    part_files = [file for file in os.listdir(root_path) if re.match(r'^[^_.].*\.part\d+$', file)]
     if part_files:
         # Use regex to extract the part number from the filename, convert to int for sorting
         part_files.sort(key=lambda file: int(re.search(r'part(\d+)', file).group(1)))
