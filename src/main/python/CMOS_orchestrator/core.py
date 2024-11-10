@@ -124,7 +124,7 @@ def check_block_devices(device_mount_directory_path:str) -> BlockDevice:
     raise Exception('No block device matched the given file lists.')
 
 
-def copy_with_progress(src_path, dst_path, progress_callback=lambda progress, copied_bytes: None, chunk_size_kb=1000):
+def copy_with_progress(src_path, dst_path, progress_callback=lambda file_path, copied_bytes, progress: None, chunk_size_kb=1000):
     file_size = os.path.getsize(src_path)
     chunk_size = chunk_size_kb * 1024  # convert from Kilobytes to bytes
     copied_bytes = 0
@@ -133,25 +133,25 @@ def copy_with_progress(src_path, dst_path, progress_callback=lambda progress, co
             dst_file.write(chunk)
             copied_bytes += len(chunk)
             copy_progress = copied_bytes / file_size
-            progress_callback(copy_progress, copied_bytes)
+            progress_callback(src_path, copied_bytes, copy_progress)
 
 
 class PartsProgressReporter:
     def __init__(self, total_bytes):
         self.total_bytes = total_bytes
         self.last_reported_percent = None
+        self.file_bytes_copied = {}
 
-    def report_progress(self, progress, copied_bytes):
-        overall_part_copying_progress = copied_bytes / self.total_bytes
+    def report_progress(self, file_path, copied_bytes, progress):
+        self.file_bytes_copied[file_path] = copied_bytes
+        overall_part_copying_progress = sum(self.file_bytes_copied.values()) / self.total_bytes
         progress_percent = round(overall_part_copying_progress * 100)
         if self.last_reported_percent != progress_percent:
             self.last_reported_percent = progress_percent
-            logger.info(f"Copy progress: {progress_percent}%")
+            logger.info(f"Total copy progress: {progress_percent}%")
 
 
 def calculate_total_size_of_files(file_paths: list):
-    # TODO remove this
-    logger.info(file_paths)
     total_size = 0
     for file_path in file_paths:
         if os.path.isfile(file_path):
