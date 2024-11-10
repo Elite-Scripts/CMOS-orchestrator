@@ -3,3 +3,9 @@
     grid-size: 2;
     grid-rows: 13;
 }
+#cmos-observer {
+    height: 3;
+    text-align: center;
+    background: #0d553c;
+    color: white;
+}

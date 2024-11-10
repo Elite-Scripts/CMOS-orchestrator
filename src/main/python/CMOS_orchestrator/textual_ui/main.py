@@ -5,6 +5,7 @@ from textual.app import App, ComposeResult
 from textual.containers import Container
 
 from CMOS_orchestrator.core import main
+from CMOS_orchestrator.textual_ui.cmos_observer_widget import CmosObserverWidget
 from CMOS_orchestrator.textual_ui.log_widget import SystemSynchronizedLogWidget
 from CMOS_orchestrator.textual_ui.logo_widget import BootLogo
 from CMOS_orchestrator.textual_ui.system_stats_widget import SystemStatsWidget
@@ -16,6 +17,7 @@ class TextualApp(App):
     css_path = resource_filename(__name__, '../resources/grid_layout1.tcss')
     CSS_PATH = css_path
     BINDINGS = [("d", "toggle_dark", "Toggle dark mode")]
+    cmos_observer_widget = CmosObserverWidget(id="cmos-observer")
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
@@ -24,6 +26,7 @@ class TextualApp(App):
             SystemStatsWidget(id="system-stats"),
             id="top-container",
         )
+        yield self.cmos_observer_widget
         yield SystemSynchronizedLogWidget(id="log")
 
     def action_toggle_dark(self) -> None:
@@ -34,7 +37,7 @@ class TextualApp(App):
         self.run_worker(self.run_cmos, thread=True)
 
     def run_cmos(self) -> None:
-        main()
+        main([self.cmos_observer_widget])
 
 
 def run():

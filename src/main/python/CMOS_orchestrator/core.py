@@ -237,8 +237,42 @@ def run_woeusb(iso_file, top_level_device):
             raise Exception(f'woeusb command exited with return code {process.returncode}')
 
 
-def main():
+class StatusMessage:
+    def __init__(self, status, description):
+        self.status = status
+        self.description = description
+
+
+class CmosObserver:
+    def update(self, message):
+        log_message = f"Status: {message.status}, Description: {message.description}"
+        logger.info(log_message)
+
+
+class CmosSubject:
+    def __init__(self):
+        self._observers = []
+
+    def attach(self, observer):
+        self._observers.append(observer)
+
+    def notify(self, message):
+        for observer in self._observers:
+            observer.update(message)
+
+
+def main(observers=None):
+    if observers is None:
+        observers = []
+    cmos_subject = CmosSubject()
+    # Add the default observer
+    cmos_subject.attach(CmosObserver())
+    # Add any additional observers
+    for observer in observers:
+        cmos_subject.attach(observer)
+
     try:
+        cmos_subject.notify(StatusMessage("Starting CMOS", "CMOS is starting."))
         if platform.system() == 'Windows':
             logger.info("You are currently running Windows. CMOS only supports X86-64 Linux based operating systems.")
             return
@@ -246,15 +280,30 @@ def main():
         device_mount_directory_path = os.path.join(user_home_directory_path, "mnt")
         iso_root_mount_path_directory = os.path.join(user_home_directory_path, "iso")
 
+        cmos_subject.notify(StatusMessage("Step 1/5: Searching for CMOS USB", "This should take less than a minute."))
         cmos_usb = check_block_devices(device_mount_directory_path)
+
+        cmos_subject.notify(StatusMessage("Step 2/5: Gather ISO File(s)",
+                                          """This step can take a while, but you should see progress continue.
+                                          If it stalls out something went wrong."""))
         gather_and_extract_iso_files(cmos_usb.mountpoint, iso_root_mount_path_directory)
+
+        cmos_subject.notify(StatusMessage("Step 3/5: Verify ISO File(s)", "This should take less than a minute."))
         iso_file = verify_iso_file(iso_root_mount_path_directory)
+
+        cmos_subject.notify(StatusMessage("Step 4/5: Get Top level device", "This should take less than a second."))
         top_level_device = get_top_level_device(cmos_usb.name)
+
+        cmos_subject.notify(StatusMessage("Step 5/5: Run WoeUSB", "N/A"))
         run_woeusb(iso_file, top_level_device)
-        logger.info("CMOS has completed successfully!")
+
+        cmos_subject.notify(StatusMessage("CMOS has completed successfully!", "CMOS is starting."))
     except Exception as e:
         logger.error(e)
         logger.error("CMOS experienced a failure!")
+        cmos_subject.notify(StatusMessage("CMOS experienced a failure!", "Error occurred."))
         logger.info("Sleeping for 30 seconds before terminating.")
         time.sleep(30)
         exit(0)
+
+
