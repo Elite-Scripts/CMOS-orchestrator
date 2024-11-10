@@ -16,6 +16,7 @@ from typing import List, Tuple
 
 logger = logging.getLogger("cmos")
 
+
 def get_top_level_device(device):
     logger.info(device)
     top_devices = subprocess.check_output(['lsblk', '-no', 'pkname', device], universal_newlines=True).strip()
@@ -123,22 +124,38 @@ def check_block_devices(device_mount_directory_path:str) -> BlockDevice:
     raise Exception('No block device matched the given file lists.')
 
 
-def copy_with_progress(src_path, dst_path, progress_callback=lambda progress: None, chunk_size_kb=1000):
+def copy_with_progress(src_path, dst_path, progress_callback=lambda progress, copied_bytes: None, chunk_size_kb=1000):
     file_size = os.path.getsize(src_path)
     chunk_size = chunk_size_kb * 1024  # convert from Kilobytes to bytes
+    copied_bytes = 0
     with open(src_path, 'rb') as src_file, open(dst_path, 'ab') as dst_file:
         for chunk in iter(lambda: src_file.read(chunk_size), b''):
             dst_file.write(chunk)
-            copy_progress = src_file.tell() / file_size
-            progress_callback(copy_progress)
+            copied_bytes += len(chunk)
+            copy_progress = copied_bytes / file_size
+            progress_callback(copy_progress, copied_bytes)
 
 
-def progress_reporter(progress):
-    progress_percent = round(progress * 100)
-    if not hasattr(progress_reporter,
-                   "last_reported_percent") or progress_reporter.last_reported_percent != progress_percent:
-        progress_reporter.last_reported_percent = progress_percent
-        logger.info(f"Copy progress: {progress_percent}%")
+class PartsProgressReporter:
+    def __init__(self, total_bytes):
+        self.total_bytes = total_bytes
+        self.last_reported_percent = None
+
+    def report_progress(self, progress, copied_bytes):
+        overall_part_copying_progress = copied_bytes / self.total_bytes
+        progress_percent = round(overall_part_copying_progress * 100)
+        if self.last_reported_percent != progress_percent:
+            self.last_reported_percent = progress_percent
+            logger.info(f"Copy progress: {progress_percent}%")
+
+
+
+def calculate_total_size_of_files(file_paths: list):
+    total_size = 0
+    for file_path in file_paths:
+        if os.path.isfile(file_path):
+            total_size += os.path.getsize(file_path)
+    return total_size
 
 
 def gather_and_extract_iso_files(root_path: str, root_mount_path_directory: str):
@@ -153,30 +170,25 @@ def gather_and_extract_iso_files(root_path: str, root_mount_path_directory: str)
         if file.endswith('.iso'):
             shutil.copy(os.path.join(root_path, file), iso_path)
 
-    # find and extract .001 files
-    # for file in os.listdir(root_path):
-    #     if file.endswith('.001'):
-    #         subprocess.run(['7z', 'x', os.path.join(root_path, file), f'-o{iso_path}'])
-
     # Find and concatenate .part* files
     concatenated_iso_path = os.path.join(iso_path, 'concatenated_iso.iso')
-    part_files_found = False
+    part_files = [file for file in os.listdir(root_path) if file.endswith('.part') and not file.startswith("._")]
+    if part_files:
+        # Use regex to extract the part number from the filename, convert to int for sorting
+        part_files.sort(key=lambda file: int(re.search(r'part(\d+)', file).group(1)))
+        combined_part_file_sizes = calculate_total_size_of_files(part_files)
+        parts_progress_reporter = PartsProgressReporter(combined_part_file_sizes)
+        for file in part_files:
+            logger.info(f"Adding the following file to the ISO: {os.path.join(root_path, file)}")
+            src_path = os.path.join(root_path, file)
+            copy_with_progress(src_path=src_path,
+                               dst_path=concatenated_iso_path,
+                               progress_callback=parts_progress_reporter.report_progress,
+                               chunk_size_kb=20000)
+        logger.info("Finished concatenation.")
+    else:
+        logger.info("No part files found.")
 
-    for i in range(1, 21):
-        for file in os.listdir(root_path):
-            if file.endswith(f'.part{i}') and not file.startswith("._"):
-                part_files_found = True
-                logger.info(f"Adding the following file to the ISO: {os.path.join(root_path, file)}")
-                src_path = os.path.join(root_path, file)
-                copy_with_progress(src_path=src_path,
-                                   dst_path=concatenated_iso_path,
-                                   progress_callback=progress_reporter,
-                                   chunk_size_kb=20000)
-                break
-        if not part_files_found:
-            logger.info("No more part files found, finished concatenation.")
-            break
-        part_files_found = False
     unmount_directory(root_path)
 
 
