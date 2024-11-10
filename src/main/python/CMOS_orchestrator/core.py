@@ -149,13 +149,18 @@ class PartsProgressReporter:
             logger.info(f"Copy progress: {progress_percent}%")
 
 
-
 def calculate_total_size_of_files(file_paths: list):
+    # TODO remove this
+    logger.info(file_paths)
     total_size = 0
     for file_path in file_paths:
         if os.path.isfile(file_path):
             total_size += os.path.getsize(file_path)
     return total_size
+
+
+def bytes_to_mb(bytes):
+    return bytes / 1048576
 
 
 def gather_and_extract_iso_files(root_path: str, root_mount_path_directory: str):
@@ -177,6 +182,8 @@ def gather_and_extract_iso_files(root_path: str, root_mount_path_directory: str)
         # Use regex to extract the part number from the filename, convert to int for sorting
         part_files.sort(key=lambda file: int(re.search(r'part(\d+)', file).group(1)))
         combined_part_file_sizes = calculate_total_size_of_files(part_files)
+        combined_part_file_sizes_mb = bytes_to_mb(combined_part_file_sizes)
+        logger.info(f"Attempting to combine {len(part_files)} part files that total {combined_part_file_sizes_mb} MB")
         parts_progress_reporter = PartsProgressReporter(combined_part_file_sizes)
         for file in part_files:
             logger.info(f"Adding the following file to the ISO: {os.path.join(root_path, file)}")
