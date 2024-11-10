@@ -177,7 +177,8 @@ def gather_and_extract_iso_files(root_path: str, root_mount_path_directory: str)
 
     # Find and concatenate .part* files
     concatenated_iso_path = os.path.join(iso_path, 'concatenated_iso.iso')
-    part_files = [file for file in os.listdir(root_path) if re.match(r'^[^_.].*\.part\d+$', file)]
+    part_file_regex = r'^[^_.].*\.part\d+$'
+    part_files = [os.path.join(root_path, file) for file in os.listdir(root_path) if re.match(part_file_regex, file)]
     if part_files:
         # Use regex to extract the part number from the filename, convert to int for sorting
         part_files.sort(key=lambda file: int(re.search(r'part(\d+)', file).group(1)))
@@ -186,9 +187,8 @@ def gather_and_extract_iso_files(root_path: str, root_mount_path_directory: str)
         logger.info(f"Attempting to combine {len(part_files)} part files that total {combined_part_file_sizes_mb} MB")
         parts_progress_reporter = PartsProgressReporter(combined_part_file_sizes)
         for file in part_files:
-            logger.info(f"Adding the following file to the ISO: {os.path.join(root_path, file)}")
-            src_path = os.path.join(root_path, file)
-            copy_with_progress(src_path=src_path,
+            logger.info(f"Adding the following file to the ISO: {file}")
+            copy_with_progress(src_path=file,
                                dst_path=concatenated_iso_path,
                                progress_callback=parts_progress_reporter.report_progress,
                                chunk_size_kb=20000)
