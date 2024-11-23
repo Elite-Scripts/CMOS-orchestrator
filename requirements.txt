@@ -5,3 +5,4 @@ psutil==6.0.0
 pytest==8.3.3
 setuptools==75.2.0
 wheel==0.44.0
+git+https://github.com/Elite-Scripts/WoeUSB-ng.git@cf688d3d466739f13a7d917a2a32104120cc76f0#egg=WoeUSB-ng
