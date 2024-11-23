@@ -3,10 +3,12 @@ from pathlib import Path
 from pkg_resources import resource_filename
 from textual.app import App, ComposeResult
 from textual.containers import Container
+from textual.lazy import Lazy, Reveal
 
 from CMOS_orchestrator.core import main
 from CMOS_orchestrator.textual_ui.cmos_observer_widget import CmosObserverWidget
 from CMOS_orchestrator.textual_ui.log_widget import SystemSynchronizedLogWidget
+from CMOS_orchestrator.textual_ui.logo_slim_widget import BootLogoSlim
 from CMOS_orchestrator.textual_ui.logo_widget import BootLogo
 from CMOS_orchestrator.textual_ui.system_stats_widget import SystemStatsWidget
 
@@ -18,12 +20,13 @@ class TextualApp(App):
     CSS_PATH = css_path
     BINDINGS = [("d", "toggle_dark", "Toggle dark mode")]
     cmos_observer_widget = CmosObserverWidget(id="cmos-observer")
+    system_stats_widget = SystemStatsWidget(id="system-stats")
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
         yield Container(
             BootLogo(id='logo'),
-            SystemStatsWidget(id="system-stats"),
+            self.system_stats_widget,
             id="top-container",
         )
         yield self.cmos_observer_widget

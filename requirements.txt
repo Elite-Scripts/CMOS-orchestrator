@@ -1,4 +1,4 @@
-textual==0.83.0
+textual==0.86.3
 textual-dev==1.6.1
 rich-pixels==3.0.1
 psutil==6.0.0

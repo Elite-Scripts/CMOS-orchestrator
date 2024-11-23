@@ -2,10 +2,20 @@
     layout: grid;
     grid-size: 2;
     grid-rows: 13;
+    height: 13;
+}
+#top-container-slim {
+    layout: grid;
+    grid-size: 2;
+    grid-rows: 2;
+    height: 2;
 }
 #cmos-observer {
     height: 3;
     text-align: center;
     background: #0d553c;
     color: white;
+}
+.hidden {
+    display: none;
 }

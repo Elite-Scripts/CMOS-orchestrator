@@ -40,6 +40,9 @@ class SystemStatsWidget(Widget):
 
     def get_content(self) -> str:
         """Content of widget"""
+        if self.parent.styles.height.value.real <= 3:
+            return (f"MEMORY: {self.used_memory}MB Used out of {self.total_memory}MB Total - "
+                    f"({self.memory_percent}% used)")
         return f"""
         MEMORY INFO
         Total memory: {self.total_memory} MB
