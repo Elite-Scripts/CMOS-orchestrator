@@ -1,4 +1,6 @@
+import asyncio
 import time
+from asyncio import create_task
 
 from rich.text import Text
 from textual.containers import Container
@@ -19,6 +21,15 @@ class CmosObserverWidget(Widget):
         self.last_status = self.status
         self.status = message.status
         self.description = message.description
+
+    async def auto_refresh(self):
+        while True:
+            self.refresh()
+            await asyncio.sleep(1)
+
+    def on_mount(self) -> None:
+        """Lifecycle method called when the widget is added to the app."""
+        create_task(self.auto_refresh())
 
     def render(self):
         # has_failed = True
