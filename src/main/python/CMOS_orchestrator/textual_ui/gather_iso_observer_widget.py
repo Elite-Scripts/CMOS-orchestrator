@@ -18,7 +18,7 @@ class GatherIsoObserverWidget(ProgressBar):
         self.update(progress=self.progress_percent)
 
     def process_completed(self):
-        self.add_class("hidden")
+        self.remove()
 
     async def auto_refresh(self):
         while True:
