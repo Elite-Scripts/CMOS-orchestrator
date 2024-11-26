@@ -7,6 +7,7 @@ from textual.lazy import Lazy, Reveal
 
 from CMOS_orchestrator.core import main
 from CMOS_orchestrator.textual_ui.cmos_observer_widget import CmosObserverWidget
+from CMOS_orchestrator.textual_ui.gather_iso_observer_widget import GatherIsoObserverWidget
 from CMOS_orchestrator.textual_ui.log_widget import SystemSynchronizedLogWidget
 from CMOS_orchestrator.textual_ui.logo_slim_widget import BootLogoSlim
 from CMOS_orchestrator.textual_ui.logo_widget import BootLogo
@@ -20,6 +21,7 @@ class TextualApp(App):
     CSS_PATH = css_path
     BINDINGS = [("d", "toggle_dark", "Toggle dark mode")]
     cmos_observer_widget = CmosObserverWidget(id="cmos-observer")
+    gather_iso_observer_widget = GatherIsoObserverWidget(id="gather-iso-observer", total=100)
     system_stats_widget = SystemStatsWidget(id="system-stats")
 
     def compose(self) -> ComposeResult:
@@ -30,6 +32,10 @@ class TextualApp(App):
             id="top-container",
         )
         yield self.cmos_observer_widget
+        yield Container(
+            self.gather_iso_observer_widget,
+            id="progress-bars",
+        )
         yield SystemSynchronizedLogWidget(id="log")
 
     def action_toggle_dark(self) -> None:
@@ -40,7 +46,7 @@ class TextualApp(App):
         self.run_worker(self.run_cmos, thread=True)
 
     def run_cmos(self) -> None:
-        main([self.cmos_observer_widget])
+        main([self.cmos_observer_widget], [self.gather_iso_observer_widget])
 
 
 def run():

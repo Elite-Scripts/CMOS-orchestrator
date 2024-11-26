@@ -160,3 +160,14 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
+
+# Vagrant
+.vagrant/
+
+# Test ISO files for CMOS testing
+src/integration_test/python/CMOS_orchestrator/resources/test_isos/*
+!src/integration_test/python/CMOS_orchestrator/resources/test_isos/README.md
+
+# CMOS
+cmos_logfile.json
+cmos_logfile.log

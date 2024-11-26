@@ -11,10 +11,17 @@
     height: 2;
 }
 #cmos-observer {
-    height: 3;
+    height: 2;
     text-align: center;
-    background: #0d553c;
+    background: darkgreen;
     color: white;
+}
+#progress-bars {
+    height: 1;
+    background: darkgreen;
+    align: center middle;
+}
+#gather-iso-observer {
 }
 .hidden {
     display: none;

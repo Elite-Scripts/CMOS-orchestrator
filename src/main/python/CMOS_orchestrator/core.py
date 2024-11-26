@@ -12,6 +12,7 @@ import json
 import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from typing import List, Tuple
 
 logger = logging.getLogger("cmos")
@@ -136,11 +137,28 @@ def copy_with_progress(src_path, dst_path, progress_callback=lambda file_path, c
             progress_callback(src_path, copied_bytes, copy_progress)
 
 
+@dataclass
+class ProgressUpdate:
+    file_path: str
+    progress_percent: int
+
+
 class PartsProgressReporter:
-    def __init__(self, total_bytes):
+    def __init__(self, total_bytes, observers=None):
         self.total_bytes = total_bytes
         self.last_reported_percent = None
         self.file_bytes_copied = {}
+        if observers is None:
+            observers = []
+        self.observers = observers
+
+    def attach(self, observer):
+        self.observers.append(observer)
+
+    def notify_observers(self, file_path, last_reported_percent):
+        progress_update = ProgressUpdate(file_path, last_reported_percent)
+        for observer in self.observers:
+            observer.update_progress(progress_update)
 
     def report_progress(self, file_path, copied_bytes, progress):
         self.file_bytes_copied[file_path] = copied_bytes
@@ -149,6 +167,8 @@ class PartsProgressReporter:
         if self.last_reported_percent != progress_percent:
             self.last_reported_percent = progress_percent
             logger.info(f"Total copy progress: {progress_percent}%")
+            self.notify_observers(file_path, progress_percent)
+
 
 
 def calculate_total_size_of_files(file_paths: list):
@@ -163,7 +183,7 @@ def bytes_to_mb(bytes):
     return bytes / 1048576
 
 
-def gather_and_extract_iso_files(root_path: str, root_mount_path_directory: str):
+def gather_and_extract_iso_files(root_path: str, root_mount_path_directory: str, gather_iso_observers: list):
     iso_path = root_mount_path_directory
 
     # Equivalent to mkdir -p
@@ -185,7 +205,7 @@ def gather_and_extract_iso_files(root_path: str, root_mount_path_directory: str)
         combined_part_file_sizes = calculate_total_size_of_files(part_files)
         combined_part_file_sizes_mb = bytes_to_mb(combined_part_file_sizes)
         logger.info(f"Attempting to combine {len(part_files)} part files that total {combined_part_file_sizes_mb} MB")
-        parts_progress_reporter = PartsProgressReporter(combined_part_file_sizes)
+        parts_progress_reporter = PartsProgressReporter(combined_part_file_sizes, gather_iso_observers)
         for file in part_files:
             logger.info(f"Adding the following file to the ISO: {file}")
             copy_with_progress(src_path=file,
@@ -244,7 +264,7 @@ class StatusMessage:
 
 
 class CmosObserver:
-    def update(self, message):
+    def update(self, message: StatusMessage):
         log_message = f"Status: {message.status}, Description: {message.description}"
         logger.info(log_message)
 
@@ -261,15 +281,18 @@ class CmosSubject:
             observer.update(message)
 
 
-def main(observers=None):
-    if observers is None:
-        observers = []
+def main(cmos_observers=None, gather_iso_observers=None):
+    if cmos_observers is None:
+        cmos_observers = []
     cmos_subject = CmosSubject()
     # Add the default observer
     cmos_subject.attach(CmosObserver())
     # Add any additional observers
-    for observer in observers:
+    for observer in cmos_observers:
         cmos_subject.attach(observer)
+
+    if gather_iso_observers is None:
+        gather_iso_observers = []
 
     try:
         cmos_subject.notify(StatusMessage("Starting CMOS", "CMOS is starting."))
@@ -284,9 +307,8 @@ def main(observers=None):
         cmos_usb = check_block_devices(device_mount_directory_path)
 
         cmos_subject.notify(StatusMessage("Step 2/5: Gather ISO File(s)",
-                                          """This step can take a while, but you should see progress continue.
-                                          If it stalls out something went wrong."""))
-        gather_and_extract_iso_files(cmos_usb.mountpoint, iso_root_mount_path_directory)
+                                          """Progress should be consistent and not stall out."""))
+        gather_and_extract_iso_files(cmos_usb.mountpoint, iso_root_mount_path_directory, gather_iso_observers)
 
         cmos_subject.notify(StatusMessage("Step 3/5: Verify ISO File(s)", "This should take less than a minute."))
         iso_file = verify_iso_file(iso_root_mount_path_directory)
@@ -297,7 +319,7 @@ def main(observers=None):
         cmos_subject.notify(StatusMessage("Step 5/5: Run WoeUSB", "N/A"))
         run_woeusb(iso_file, top_level_device)
 
-        cmos_subject.notify(StatusMessage("CMOS has completed successfully!", "CMOS is starting."))
+        cmos_subject.notify(StatusMessage("CMOS has completed successfully!", "Thank you for using CMOS!"))
     except Exception as e:
         logger.error(e)
         logger.error("CMOS experienced a failure!")
