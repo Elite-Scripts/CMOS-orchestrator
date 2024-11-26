@@ -160,6 +160,10 @@ class PartsProgressReporter:
         for observer in self.observers:
             observer.update_progress(progress_update)
 
+    def notify_observers_process_completed(self):
+        for observer in self.observers:
+            observer.process_completed()
+
     def report_progress(self, file_path, copied_bytes, progress):
         self.file_bytes_copied[file_path] = copied_bytes
         overall_part_copying_progress = sum(self.file_bytes_copied.values()) / self.total_bytes
@@ -212,6 +216,7 @@ def gather_and_extract_iso_files(root_path: str, root_mount_path_directory: str,
                                dst_path=concatenated_iso_path,
                                progress_callback=parts_progress_reporter.report_progress,
                                chunk_size_kb=20000)
+        parts_progress_reporter.notify_observers_process_completed()
         logger.info("Finished concatenation.")
     else:
         logger.info("No part files found.")

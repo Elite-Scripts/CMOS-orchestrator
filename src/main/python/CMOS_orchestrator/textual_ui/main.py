@@ -21,7 +21,7 @@ class TextualApp(App):
     CSS_PATH = css_path
     BINDINGS = [("d", "toggle_dark", "Toggle dark mode")]
     cmos_observer_widget = CmosObserverWidget(id="cmos-observer")
-    gather_iso_observer_widget = GatherIsoObserverWidget(id="gather-iso-observer", total=100)
+    gather_iso_observer_widget = GatherIsoObserverWidget(id="gather-iso-observer", total=100, classes='hidden')
     system_stats_widget = SystemStatsWidget(id="system-stats")
 
     def compose(self) -> ComposeResult:
