@@ -15,6 +15,9 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import List, Tuple
 
+import WoeUSB
+from WoeUSB.core import init
+
 logger = logging.getLogger("cmos")
 
 
@@ -170,7 +173,7 @@ class PartsProgressReporter:
         progress_percent = round(overall_part_copying_progress * 100)
         if self.last_reported_percent != progress_percent:
             self.last_reported_percent = progress_percent
-            logger.info(f"Total copy progress: {progress_percent}%")
+            logger.debug(f"Total copy progress: {progress_percent}%")
             self.notify_observers(file_path, progress_percent)
 
 
@@ -262,6 +265,64 @@ def run_woeusb(iso_file, top_level_device):
             raise Exception(f'woeusb command exited with return code {process.returncode}')
 
 
+class LoggerWriter:
+    def __init__(self, level):
+        self.level = level
+
+    def write(self, message):
+        if message.rstrip() != "":
+            logger.log(self.level, message.rstrip())
+
+    def flush(self):
+        pass
+
+
+def run_woeusbv2(iso_file, top_level_device):
+    logger.addHandler(logging.StreamHandler())  # Or any other Handler
+    sys.stdout = LoggerWriter(logger.level)
+    args_list = [iso_file,
+                 top_level_device,
+                 '--device',
+                 '--no-color',
+                 '--label', 'Windows USB',
+                 '--target-filesystem', 'NTFS']
+    result = init(args_list=args_list)
+    if isinstance(result, list) is False:
+        return
+
+    source_fs_mountpoint, target_fs_mountpoint, temp_directory, \
+        install_mode, source_media, target_media, \
+        workaround_bios_boot_flag, skip_legacy_bootloader, target_filesystem_type, \
+        new_file_system_label, verbose, debug, parser = result
+
+    return_code = -1
+    try:
+        print(f'source_fs_mountpoint: {source_fs_mountpoint}')
+        print(f'target_fs_mountpoint: {target_fs_mountpoint}')
+        print(f'temp_directory: {temp_directory}')
+        print(f'install_mode: {install_mode}')
+        print(f'source_media: {source_media}')
+        print(f'target_media: {target_media}')
+        print(f'workaround_bios_boot_flag: {workaround_bios_boot_flag}')
+        print(f'skip_legacy_bootloader: {skip_legacy_bootloader}')
+        print(f'target_filesystem_type: {target_filesystem_type}')
+        print(f'new_file_system_label: {new_file_system_label}')
+        print(f'verbose: {verbose}')
+        print(f'debug: {debug}')
+        print(f'parser: {parser}')
+        return_code = WoeUSB.core.main(source_fs_mountpoint, target_fs_mountpoint, source_media, target_media,
+                                       install_mode, temp_directory, target_filesystem_type, workaround_bios_boot_flag,
+                                       parser, skip_legacy_bootloader)
+    except KeyboardInterrupt:
+        pass
+    except Exception as error:
+        logger.error(error)
+
+    WoeUSB.core.cleanup(source_fs_mountpoint, target_fs_mountpoint, temp_directory, target_media)
+    if return_code != 0:
+        raise Exception('An Error has occurred running WoeUSB')
+
+
 class StatusMessage:
     def __init__(self, status, description):
         self.status = status
@@ -322,7 +383,7 @@ def main(cmos_observers=None, gather_iso_observers=None):
         top_level_device = get_top_level_device(cmos_usb.name)
 
         cmos_subject.notify(StatusMessage("Step 5/5: Run WoeUSB", "N/A"))
-        run_woeusb(iso_file, top_level_device)
+        run_woeusbv2(iso_file, top_level_device)
 
         cmos_subject.notify(StatusMessage("CMOS has completed successfully!", "Thank you for using CMOS!"))
     except Exception as e:
