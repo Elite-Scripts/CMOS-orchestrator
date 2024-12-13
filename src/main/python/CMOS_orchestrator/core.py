@@ -111,6 +111,7 @@ def check_block_devices(device_mount_directory_path:str) -> BlockDevice:
         base_file_list + ("syslinux.cfg", "System Volume Information"),
         # Rufus with extended label and icons
         base_file_list + ("autorun.ico", "autorun.inf", "syslinux.cfg", "System Volume Information"),
+        base_file_list + ("autorun.ico", "autorun.inf", "System Volume Information"),
         base_file_list + ("System Volume Information",),
     ]
 
