@@ -3,7 +3,7 @@ from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.widgets import Footer
 
-from CMOS_orchestrator.core import main
+from CMOS_orchestrator.core import main, PostProcessTask, is_os_running_in_virtualbox
 from CMOS_orchestrator.textual_ui.cmos_observer_widget import CmosObserverWidget
 from CMOS_orchestrator.textual_ui.gather_iso_observer_widget import GatherIsoObserverWidget
 from CMOS_orchestrator.textual_ui.log_widget import SystemSynchronizedLogWidget
@@ -25,7 +25,7 @@ class TextualApp(App):
                                                                                 total=100,
                                                                                 classes="hidden background-in-progress")
     system_stats_widget = SystemStatsWidget(id="system-stats")
-    system_synchronized_log_widget = SystemSynchronizedLogWidget(id="system-synchronized-log")
+    system_synchronized_log_widget = SystemSynchronizedLogWidget(id="system-synchronized-log", classes='hidden')
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
@@ -52,7 +52,11 @@ class TextualApp(App):
         self.run_worker(self.run_cmos, thread=True)
 
     def run_cmos(self) -> None:
-        main([self.cmos_observer_widget], [self.gather_iso_observer_widget])
+        post_process_task = PostProcessTask.SHUTDOWN
+        if is_os_running_in_virtualbox():
+            # TODO remove this test environment specific code out of the src.
+            post_process_task = PostProcessTask.NONE
+        main([self.cmos_observer_widget], [self.gather_iso_observer_widget], post_process_task=post_process_task)
 
 
 def run():

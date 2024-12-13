@@ -1,18 +1,18 @@
 import glob
+import json
 import logging
 import os
 import platform
 import re
 import shutil
+import subprocess
 import sys
-import threading
+import time
 import uuid
 from collections import namedtuple
-import json
-import subprocess
-import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from enum import Enum, auto
 from typing import List, Tuple
 
 import WoeUSB
@@ -285,7 +285,8 @@ def run_woeusbv2(iso_file, top_level_device):
                  '--device',
                  '--no-color',
                  '--label', 'Windows USB',
-                 '--target-filesystem', 'NTFS']
+                 '--target-filesystem', 'NTFS',
+                 '--workaround-skip-grub']
     result = init(args_list=args_list)
     if isinstance(result, list) is False:
         return
@@ -323,6 +324,49 @@ def run_woeusbv2(iso_file, top_level_device):
         raise Exception('An Error has occurred running WoeUSB')
 
 
+
+class PostProcessTask(Enum):
+    SHUTDOWN = auto()
+    RESTART = auto()
+    NONE = auto()
+
+
+def execute_post_process_task(task: PostProcessTask):
+    """Execute post process task based on provided task"""
+    if task == PostProcessTask.SHUTDOWN:
+        shutdown_system()
+    elif task == PostProcessTask.RESTART:
+        restart_system()
+    else:
+        logger.info("The process is completed.")
+
+
+def shutdown_system():
+    """Shutdown the system"""
+    try:
+        subprocess.call(["shutdown", "-h", "now"])
+    except Exception as e:
+        logger.error(f"Error occured while trying to shutdown system: {str(e)}")
+
+
+def restart_system():
+    """Restart the system"""
+    try:
+        subprocess.call(["reboot"])
+    except Exception as e:
+        logger.error(f"Error occured while trying to restart system: {str(e)}")
+
+
+def is_os_running_in_virtualbox() -> bool:
+    try:
+        result = subprocess.run(['systemd-detect-virt'], stdout=subprocess.PIPE, check=True)
+        output = result.stdout.decode('utf-8').strip()
+        return output.lower() == 'oracle'
+    except Exception as e:
+        logger.info(f"An error occurred while trying to detect if the OS is running in VirtualBox: {str(e)}")
+        return False
+
+
 class StatusMessage:
     def __init__(self, status, description):
         self.status = status
@@ -347,7 +391,7 @@ class CmosSubject:
             observer.update(message)
 
 
-def main(cmos_observers=None, gather_iso_observers=None):
+def main(cmos_observers=None, gather_iso_observers=None, post_process_task=PostProcessTask.NONE):
     if cmos_observers is None:
         cmos_observers = []
     cmos_subject = CmosSubject()
@@ -385,7 +429,12 @@ def main(cmos_observers=None, gather_iso_observers=None):
         cmos_subject.notify(StatusMessage("Step 5/5: Run WoeUSB", "N/A"))
         run_woeusbv2(iso_file, top_level_device)
 
-        cmos_subject.notify(StatusMessage("CMOS has completed successfully!", "Thank you for using CMOS!"))
+        cmos_subject.notify(
+            StatusMessage("CMOS has completed successfully!",
+                          "It is now safe to shutdown your PC. CMOS will do this automatically for you in 30 seconds."))
+        time.sleep(30)
+        execute_post_process_task(post_process_task)
+        exit(0)
     except Exception as e:
         logger.error(e)
         logger.error("CMOS experienced a failure!")
