@@ -59,7 +59,7 @@ class CmosObserverWidget(Widget):
             self.app.query_one("#top-container-slim").remove_class("hidden")
             self.app.query_one('#progress-bars').remove_class("background-in-progress")
             self.app.query_one('#progress-bars').add_class("background-failure")
-            self.app.query_one('#log').remove_class("hidden")
+            self.app.query_one('#system-synchronized-log').remove_class("hidden")
             return Text(
                 f"Status: {self.status}\nDescription: {self.description}\nStatus That Failed: {self.last_status}",
                 style="bold")
