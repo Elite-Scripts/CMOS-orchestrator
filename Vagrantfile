@@ -63,6 +63,7 @@ Vagrant.configure("2") do |config|
     sudo mount /dev/${DISK_NAME}1 /mnt/temp
     sudo rsync -vPW --exclude='*.md' /vagrant/src/integration_test/python/CMOS_orchestrator/resources/test_isos/* /mnt/temp
     sudo mkdir /mnt/temp/boot /mnt/temp/EFI /mnt/temp/live /mnt/temp/syslinux
+    sudo touch /mnt/temp/CMOS
     sudo umount /mnt/temp
     sudo rm -rf /root/iso/*
 

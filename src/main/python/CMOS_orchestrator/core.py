@@ -104,7 +104,7 @@ def check_root_files(path_to_mount: str, file_lists: List[Tuple[str, ...]]) -> b
 
 
 def check_block_devices(device_mount_directory_path:str) -> BlockDevice:
-    base_file_list = ("boot", "EFI", "live", "syslinux")
+    base_file_list = ("boot", "EFI", "live", "syslinux", "CMOS")
     file_lists = [
         base_file_list,
         # Rufus
