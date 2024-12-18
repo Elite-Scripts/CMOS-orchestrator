@@ -432,7 +432,7 @@ def main(cmos_observers=None, gather_iso_observers=None, post_process_task=PostP
 
         cmos_subject.notify(
             StatusMessage("CMOS has completed successfully!",
-                          "It is now safe to shutdown your PC. CMOS will do this automatically for you in 30 seconds."))
+                          "You can shut down or restart now; otherwise, CMOS will do it automatically in 30 seconds."))
         time.sleep(30)
         execute_post_process_task(post_process_task)
         exit(0)
@@ -440,8 +440,8 @@ def main(cmos_observers=None, gather_iso_observers=None, post_process_task=PostP
         logger.error(e)
         logger.error("CMOS experienced a failure!")
         cmos_subject.notify(StatusMessage("CMOS experienced a failure!", "Error occurred."))
-        logger.info("Sleeping for 30 seconds before terminating.")
-        time.sleep(30)
+        logger.info("Sleeping for 60 seconds before terminating.")
+        time.sleep(60)
         exit(0)
 
 

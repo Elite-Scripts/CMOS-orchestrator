@@ -52,7 +52,7 @@ class TextualApp(App):
         self.run_worker(self.run_cmos, thread=True)
 
     def run_cmos(self) -> None:
-        post_process_task = PostProcessTask.SHUTDOWN
+        post_process_task = PostProcessTask.RESTART
         if is_os_running_in_virtualbox():
             # TODO remove this test environment specific code out of the src.
             post_process_task = PostProcessTask.NONE
