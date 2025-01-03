@@ -1,0 +1,33 @@
+#top-container {
+    layout: grid;
+    grid-size: 2;
+    grid-rows: 13;
+    height: 13;
+}
+#top-container-slim {
+    layout: grid;
+    grid-size: 2;
+    grid-rows: 2;
+    height: 2;
+}
+#cmos-observer {
+    height: 2;
+    text-align: center;
+    color: white;
+}
+#progress-bars {
+    height: 1;
+    align: center middle;
+}
+.hidden {
+    display: none;
+}
+.background-in-progress {
+    background: #6A5ACD; /* Slate Blue */
+}
+.background-complete {
+    background: darkgreen;
+}
+.background-failure {
+    background: red;
+}
