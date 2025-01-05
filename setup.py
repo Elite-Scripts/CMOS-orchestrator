@@ -14,7 +14,7 @@ setup(
         # If psutil is preinstalled on the OS this can cause issues.
         'psutil >=5.9, <6',
         'setuptools>70',
-        'WoeUSB-ng @ git+https://github.com/Elite-Scripts/WoeUSB-ng.git@07f74e32e994686d3a4f1a432e75eede4fbc3b3a#egg=WoeUSB-ng'
+        'WoeUSB-ng @ git+https://github.com/Elite-Scripts/WoeUSB-ng.git@f2c42f55034533f63c952727f8bdbb9f4d295aee#egg=WoeUSB-ng'
     ],
     entry_points={
         'console_scripts': [
